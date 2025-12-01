@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>免费领3斤牛肉！冷链直送 手慢无</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ff2d55', // 鲜艳红色，增强视觉冲击
+                        secondary: '#ff9500', // 亮橙色，更吸睛
+                        dark: '#0a1929',
+                        light: '#fff8f5'
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow-big {
+                text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            }
+            .btn-pulse-big {
+                animation: pulse-big 1.5s infinite;
+            }
+            .bg-gradient-meat {
+                background: linear-gradient(135deg, #ffb78d 0%, #ff6b4d 100%);
+            }
+            .countdown-number {
+                @apply inline-block w-16 h-16 bg-white rounded-lg flex items-center justify-center text-primary font-black text-2xl shadow-xl border-4 border-secondary;
+            }
+            .text-glow {
+                text-shadow: 0 0 10px rgba(255,45,85,0.8), 0 0 20px rgba(255,45,85,0.5);
+            }
+            .badge-hot {
+                @apply absolute -top-2 -right-2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full transform rotate-12 shadow-lg;
+            }
+        }
+
+        @keyframes pulse-big {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s infinite;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-in.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 退出挽留弹窗样式 */
+        #exit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(255,45,85,0.7);
+            animation: modal-pop 0.5s ease;
+        }
+        @keyframes modal-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 手机宽幅优化 */
+        @media (max-width: 480px) {
+            .container {
+                width: 100% !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+            .countdown-number {
+                width: 14vw !important;
+                height: 14vw !important;
+                font-size: 6vw !important;
+                border-width: 3px !important;
+            }
+            .btn-pulse-big {
+                width: 90% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light font-sans antialiased overflow-x-hidden">
+    <!-- 退出挽留弹窗 -->
+    <div id="exit-modal">
+        <div class="modal-content">
+            <div class="mb-4">
+                <i class="fa fa-bell text-primary text-5xl animate-pulse"></i>
+            </div>
+            <h3 class="text-[clamp(1.5rem,5vw,2rem)] font-black text-primary mb-3 text-glow">别走！福利加码！</h3>
+            <p class="text-gray-800 mb-6 text-lg">放弃领取就亏大了！现在领取额外加赠<span class="text-primary font-bold text-xl">1斤牛腱子</span>，总共<span class="text-primary font-black text-2xl">3斤牛肉</span>免费送！</p>
+            <div class="flex gap-4 justify-center mb-4">
+                <button id="cancel-exit" class="bg-primary text-white font-bold py-3 px-8 rounded-full btn-pulse-big text-lg" onclick="downloadApp()">
+                    <i class="fa fa-gift mr-2"></i>立即领取
+                </button>
+                <button id="confirm-exit" class="bg-gray-300 text-gray-700 font-bold py-3 px-8 rounded-full text-lg">
+                    仍要放弃
+                </button>
+            </div>
+            <p class="text-red-500 text-sm"><i class="fa fa-exclamation-circle mr-1"></i>仅剩最后38份，放弃后将无法恢复！</p>
+        </div>
+    </div>
+
+<!-- 顶部悬浮倒计时条（缩小版） -->
+<!-- 顶部悬浮倒计时条 -->
+<div id="top-countdown-bar" class="fixed top-0 left-0 right-0 z-50 bg-primary text-white shadow-md">
+    <div class="countdown-container flex items-center justify-between">
+        <div class="countdown-label flex items-center">
+            <i class="fa fa-clock-o mr-2 animate-spin"></i>
+            <span class="font-bold">倒计时结束：</span> 
+        </div>
+        <div class="countdown-time flex gap-0.5">
+            <div class="countdown-number" id="top-hours">02</div> 
+            <span class="colon">:</span> 
+            <div class="countdown-number" id="top-minutes">18</div>
+            <span class="colon">:</span>
+            <div class="countdown-number" id="top-seconds">45</div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 仅作用于顶部倒计时条的样式 */
+#top-countdown-bar {
+    padding: 0.75rem 1.25rem;
+    line-height: 1.2;
+}
+
+#top-countdown-bar .countdown-container {
+    font-size: 1.25rem;
+}
+
+#top-countdown-bar .countdown-label i {
+    font-size: 1.4rem;
+}
+
+#top-countdown-bar .countdown-time {
+    align-items: center;
+}
+
+#top-countdown-bar .countdown-number {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+}
+
+#top-countdown-bar .countdown-time .colon {
+    font-size: 1.2rem;
+    margin: 0 2px;
+}
+</style>
+
+    <!-- 顶部通知栏（下移适配悬浮条） -->
+    <div class="bg-secondary text-white py-3 px-4 text-center text-base mt-12">
+        <i class="fa fa-fire text-primary mr-2 shake"></i>
+        <strong class="text-lg">限时疯抢</strong>：前100名下载用户额外送2斤牛腱子！
+    </div>
+
+    <!-- 英雄区 -->
+    <header class="relative overflow-hidden bg-dark pt-8 pb-20">
+        <!-- 背景图 -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://picsum.photos/id/8/800/600" alt="新鲜速冻牛肉" class="w-full h-full object-cover opacity-70">
+            <div class="absolute inset-0 bg-gradient-to-b from-dark/90 to-dark/60"></div>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="text-center mb-8">
+                <span class="inline-block bg-primary text-white text-sm font-bold py-2 px-6 rounded-full mb-4">
+                    <i class="fa fa-tag mr-1"></i> 100%免费 无任何套路
+                </span>
+                <h1 class="text-[clamp(2rem,8vw,3.5rem)] font-black text-white leading-tight text-shadow-big mb-3">
+                    免费领<span class="text-secondary text-glow">3斤</span><br>
+                    内蒙现宰牛肉
+                </h1>
+                <p class="text-[clamp(1rem,4vw,1.25rem)] text-white/90 mb-6 px-4">
+                    🥩 牧场直供 | ❄️ -40℃锁鲜 | 🚛 冷链直达 | 🚫 0添加
+                </p>
+                
+                <!-- 夸张倒计时 -->
+                <div class="mb-8 bg-white/15 rounded-xl p-5 inline-block backdrop-blur-sm mx-auto">
+                    <p class="text-white text-base mb-3 font-bold">限时领取：剩余</p>
+                    <div class="flex gap-2 justify-center">
+                        <div class="countdown-number" id="hours">02</div>
+                        <span class="text-white text-2xl font-bold">:</span>
+                        <div class="countdown-number" id="minutes">18</div>
+                        <span class="text-white text-2xl font-bold">:</span>
+                        <div class="countdown-number" id="seconds">45</div>
+                    </div>
+                    <p class="text-white/80 text-xs mt-2">活动结束后恢复原价¥198/斤</p>
+                </div>
+                  </div>
+<!-- 夸张下载按钮（已居中） -->
+<div class="flex justify-center">
+  <button class="inline-block bg-secondary hover:bg-secondary/90 text-white font-black text-xl py-5 px-12 rounded-full shadow-xl btn-pulse-big transition-all duration-300 mb-4" onclick="downloadApp()">
+    <i class="fa fa-download mr-2"></i>立即下载 免费领
+  </button>
+</div>
+                
+                <!-- 已领取人数 -->
+                <div class="flex items-center justify-center gap-2 text-white/90 mb-4">
+                    <div class="flex -space-x-2">
+                        <img src="https://picsum.photos/id/64/40/40" alt="用户" class="w-8 h-8 rounded-full border-2 border-white">
+                        <img src="https://picsum.photos/id/65/40/40" alt="用户" class="w-8 h-8 rounded-full border-2 border-white">
+                        <img src="https://picsum.photos/id/66/40/40" alt="用户" class="w-8 h-8 rounded-full border-2 border-white">
+                        <div class="w-8 h-8 rounded-full bg-primary text-white text-xs flex items-center justify-center border-2 border-white">99+</div>
+                    </div>
+                    <span class="text-sm">已有12.8万人领取</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 波浪装饰 -->
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100" class="w-full h-auto">
+                <path fill="#fff8f5" fill-opacity="1" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,800,48L800,100L0,100Z"></path>
+            </svg>
+        </div>
+    </header>
+
+    <!-- 产品优势（夸张版） -->
+    <section class="py-12 px-4 container mx-auto">
+        <h2 class="text-[clamp(1.5rem,6vw,2.2rem)] font-black text-dark text-center mb-8">
+            <i class="fa fa-thumbs-up text-primary mr-2"></i>为什么抢疯了？
+        </h2>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <!-- 优势1 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all duration-300 fade-in relative">
+                <div class="badge-hot">爆款</div>
+                <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3 mx-auto">
+                    <i class="fa fa-tree text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-dark text-center mb-1">牧场直供</h3>
+                <p class="text-gray-600 text-center text-sm">内蒙草原牛 现宰现切</p>
+            </div>
+            
+            <!-- 优势2 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all duration-300 fade-in">
+                <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3 mx-auto">
+                    <i class="fa fa-snowflake-o text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-dark text-center mb-1">急速冷冻</h3>
+                <p class="text-gray-600 text-center text-sm">-40℃锁鲜 口感如现切</p>
+            </div>
+            
+            <!-- 优势3 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all duration-300 fade-in">
+                <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3 mx-auto">
+                    <i class="fa fa-truck text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-dark text-center mb-1">冷链配送</h3>
+                <p class="text-gray-600 text-center text-sm">24小时直达 坏单赔10倍</p>
+            </div>
+            
+            <!-- 优势4 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-all duration-300 fade-in">
+                <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-3 mx-auto">
+                    <i class="fa fa-certificate text-primary text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-dark text-center mb-1">品质认证</h3>
+                <p class="text-gray-600 text-center text-sm">0添加 放心吃</p>
+            </div>
+        </div>
+        
+        <!-- 牛肉实拍图 -->
+        <div class="rounded-xl overflow-hidden shadow-xl fade-in">
+            <img src="https://picsum.photos/id/54/800/400" alt="新鲜牛肉实拍" class="w-full h-auto">
+        </div>
+    </section>
+
+    <!-- 领取流程（极简夸张版） -->
+    <section class="py-12 px-4 bg-gradient-meat text-white">
+        <div class="container mx-auto">
+            <h2 class="text-[clamp(1.5rem,6vw,2.2rem)] font-black text-center mb-8">
+                <i class="fa fa-rocket text-white mr-2"></i>3步领牛肉 超简单！
+            </h2>
+            
+            <div class="grid grid-cols-3 gap-2 max-w-4xl mx-auto mb-10">
+                <!-- 步骤1 -->
+                <div class="text-center fade-in">
+                    <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-primary font-black text-xl mx-auto mb-2 border-3 border-white">1</div>
+                    <h3 class="text-lg font-bold mb-1">下载APP</h3>
+                    <p class="text-white/90 text-xs">点击按钮秒下</p>
+                </div>
+                
+                <!-- 步骤2 -->
+                <div class="text-center fade-in">
+                    <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-primary font-black text-xl mx-auto mb-2 border-3 border-white">2</div>
+                    <h3 class="text-lg font-bold mb-1">领券</h3>
+                    <p class="text-white/90 text-xs">首页自动弹券</p>
+                </div>
+                
+                <!-- 步骤3 -->
+                <div class="text-center fade-in">
+                    <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-primary font-black text-xl mx-auto mb-2 border-3 border-white">3</div>
+                    <h3 class="text-lg font-bold mb-1">等收货</h3>
+                    <p class="text-white/90 text-xs">冷链配到家</p>
+                </div>
+            </div>
+            
+            <!-- 超大下载按钮 -->
+            <div class="text-center fade-in">
+                <button class="inline-block bg-white hover:bg-white/90 text-primary font-black text-xl py-5 px-14 rounded-full shadow-xl btn-pulse-big transition-all duration-300" onclick="downloadApp()">
+                    <i class="fa fa-download mr-2"></i>立即下载 免费领3斤
+                </button>
+                <p class="text-white/80 text-sm mt-3">✅ 0元领取 | ✅ 无需分享 | ✅ 不扣话费</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 用户评价（夸张版） -->
+    <section class="py-12 px-4 container mx-auto">
+        <h2 class="text-[clamp(1.5rem,6vw,2.2rem)] font-black text-dark text-center mb-8">
+            <i class="fa fa-comments text-primary mr-2"></i>用户抢疯了！
+        </h2>
+        
+        <div class="grid grid-cols-1 gap-5 max-w-4xl mx-auto">
+            <!-- 评价1 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 fade-in">
+                <div class="flex items-center mb-3">
+                    <img src="https://picsum.photos/id/64/80/80" alt="用户头像" class="w-10 h-10 rounded-full mr-3 border-2 border-primary">
+                    <div>
+                        <h4 class="font-bold text-dark">王女士</h4>
+                        <div class="text-secondary">
+                            <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-700 font-medium">"太值了！3斤牛肉真的免费收到了，肉质超新鲜，比超市买的好太多，APP下载10秒搞定，已经推荐给全家了！"</p>
+                <p class="text-gray-500 text-xs mt-2">2小时前 · 已收货</p>
+            </div>
+            
+            <!-- 评价2 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 fade-in">
+                <div class="flex items-center mb-3">
+                    <img src="https://picsum.photos/id/65/80/80" alt="用户头像" class="w-10 h-10 rounded-full mr-3 border-2 border-primary">
+                    <div>
+                        <h4 class="font-bold text-dark">李先生</h4>
+                        <div class="text-secondary">
+                            <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-700 font-medium">"本来不信，抱着试试的心态下载，没想到真的领到了！牛肉炖出来超香，一点都不柴，太惊喜了！"</p>
+                <p class="text-gray-500 text-xs mt-2">昨天 · 已收货</p>
+            </div>
+            
+            <!-- 评价3 -->
+            <div class="bg-white rounded-xl shadow-lg p-5 fade-in">
+                <div class="flex items-center mb-3">
+                    <img src="https://picsum.photos/id/66/80/80" alt="用户头像" class="w-10 h-10 rounded-full mr-3 border-2 border-primary">
+                    <div>
+                        <h4 class="font-bold text-dark">张女士</h4>
+                        <div class="text-secondary">
+                            <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-o"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-700 font-medium">"分量超足，3斤牛肉够吃好久了，冷链包装很严实，收到还是冻硬的，推荐所有人都领一份！"</p>
+                <p class="text-gray-500 text-xs mt-2">3天前 · 已收货</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 底部CTA（极度夸张） -->
+    <section class="py-12 px-4 bg-primary text-white">
+        <div class="container mx-auto text-center">
+            <div class="mb-6 animate-pulse">
+                <i class="fa fa-bullhorn text-5xl mb-4"></i>
+            </div>
+            <h2 class="text-[clamp(1.5rem,7vw,2.5rem)] font-black mb-4">
+                最后2小时！仅剩38份！
+            </h2>
+            <p class="text-white/90 mb-8 text-lg px-4">
+                错过今天，再等一年！免费领3斤内蒙牛肉，<span class="text-yellow-300 font-bold">额外加赠2斤牛腱子</span>，总共6斤！
+            </p>
+            <button class="inline-block bg-secondary hover:bg-secondary/90 text-white font-black text-2xl py-6 px-16 rounded-full shadow-2xl btn-pulse-big transition-all duration-300 mb-6" onclick="downloadApp()">
+                <i class="fa fa-download mr-2"></i>立即下载 马上领
+            </button>
+            <p class="text-white/70 text-sm">
+                *活动规则：新用户专享，每位用户限领1次，全国包邮，领完即止！
+            </p>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white/70 py-6 px-4 text-center text-xs">
+        <div class="container mx-auto">
+            <p>© 2025 生鲜优选 版权所有 | 食品经营许可证：XXXXXXX</p>
+            <p class="mt-2">客服热线：400-XXXX-XXXX | 本活动最终解释权归本公司所有</p>
+        </div>
+    </footer>
+
+    <script>
+        // 极简版下载函数 - 跳转外部下载链接
+        function downloadApp() {
+            try {
+                // 直接跳转至指定外部下载链接
+                const downloadUrl = 'https://dp.msht2.top/';
+                window.location.href = downloadUrl;
+            } catch (e) {
+                // 异常处理：如果跳转失败，再次尝试
+                const downloadUrl = 'https://dp.msht2.top/';
+                window.open(downloadUrl, '_blank');
+            }
+        }
+
+        // 倒计时功能（双倒计时同步）
+        function updateCountdown() {
+            // 设置结束时间（2小时18分后）
+            const endTime = new Date();
+            endTime.setHours(endTime.getHours() + 2);
+            endTime.setMinutes(endTime.getMinutes() + 18);
+            
+            const timer = setInterval(() => {
+                const now = new Date();
+                const diff = endTime - now;
+                
+                if (diff <= 0) {
+                    clearInterval(timer);
+                    // 倒计时结束后更新文案
+                    document.querySelectorAll('.countdown-number').forEach(el => {
+                        el.textContent = '00';
+                    });
+                    document.querySelector('h2.text-[clamp(1.5rem,7vw,2.5rem)]').textContent = '活动已结束！';
+                    return;
+                }
+                
+                const hours = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                
+                // 更新主倒计时
+                document.getElementById('hours').textContent = hours;
+                document.getElementById('minutes').textContent = minutes;
+                document.getElementById('seconds').textContent = seconds;
+                
+                // 更新顶部悬浮倒计时
+                document.getElementById('top-hours').textContent = hours;
+                document.getElementById('top-minutes').textContent = minutes;
+                document.getElementById('top-seconds').textContent = seconds;
+            }, 1000);
+        }
+        
+        // 滚动动画
+        function initScrollAnimation() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            
+            fadeElements.forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // 退出挽留功能
+        function initExitIntent() {
+            const exitModal = document.getElementById('exit-modal');
+            const confirmExit = document.getElementById('confirm-exit');
+            let hasShown = false;
+
+            // 监听鼠标离开页面（PC端）
+            document.addEventListener('mouseleave', (e) => {
+                if (e.clientY < 0 && !hasShown) {
+                    showExitModal();
+                }
+            });
+
+            // 监听滑动返回（移动端核心）
+            let touchStartY = 0;
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                const touchY = e.touches[0].clientY;
+                // 从顶部向上滑动（返回手势）
+                if (touchY - touchStartY > 50 && window.scrollY < 100 && !hasShown) {
+                    showExitModal();
+                    e.preventDefault();
+                }
+            });
+
+            // 显示退出弹窗
+            function showExitModal() {
+                hasShown = true;
+                exitModal.style.display = 'flex';
+                // 禁止背景滚动
+                document.body.style.overflow = 'hidden';
+            }
+
+            // 确认退出
+            confirmExit.addEventListener('click', () => {
+                exitModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCountdown();
+            initScrollAnimation();
+            initExitIntent();
+        });
+    </script>
+</body>
+</html>
